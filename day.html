@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Day View</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <button class="btn" onclick="history.back()">← Back</button>
+        <h2 id="date-title"></h2>
+        
+        <div id="decision-container"></div>
+        
+        <button class="btn" onclick="addDecision()">+ Add Decision</button>
+        <hr>
+        <button class="btn" onclick="exportDayPDF()">Export Day as PDF</button>
+        <button class="btn btn-delete" onclick="deleteDay()">Delete Entire Day</button>
+    </div>
+
+    <script src="storage.js"></script>
+    <script src="pdf-export.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const dayId = urlParams.get('id');
+
+        async function initDay() {
+            await initDB();
+            const tx = db.transaction('days').objectStore('days');
+            const day = await new Promise(r => {
+                const req = tx.get(dayId);
+                req.onsuccess = () => r(req.result);
+            });
+            document.getElementById('date-title').innerText = day.date;
+            loadDecisions();
+        }
+
+        async function loadDecisions() {
+            const decisions = await getDecisionsForDay(dayId);
+            const container = document.getElementById('decision-container');
+            container.innerHTML = decisions.map(d => `
+                <div class="decision-block">
+                    <label>Time</label><div>${d.time}</div>
+                    <label>Do I have permission to do?</label>
+                    <textarea onchange="updateDecision(${d.id}, 'task', this.value)">${d.task || ''}</textarea>
+                    <label>Answer from RDM (PC)</label>
+                    <textarea onchange="updateDecision(${d.id}, 'rdm', this.value)">${d.rdm || ''}</textarea>
+                    <label>Reply from IGM (LS)</label>
+                    <textarea onchange="updateDecision(${d.id}, 'igm', this.value)">${d.igm || ''}</textarea>
+                    <button class="btn-delete" onclick="deleteDecision(${d.id})">Delete Block</button>
+                </div>
+            `).join('');
+        }
+
+        async function addDecision() {
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const tx = db.transaction('decisions', 'readwrite');
+            tx.objectStore('decisions').add({ dayId, time, task: '', rdm: '', igm: '' });
+            tx.oncomplete = loadDecisions;
+        }
+
+        async function updateDecision(id, field, value) {
+            const tx = db.transaction('decisions', 'readwrite');
+            const store = tx.objectStore('decisions');
+            const req = store.get(id);
+            req.onsuccess = () => {
+                const data = req.result;
+                data[field] = value;
+                store.put(data);
+            };
+        }
+
+        async function deleteDecision(id) {
+            if(confirm("Delete this decision block?")) {
+                const tx = db.transaction('decisions', 'readwrite');
+                tx.objectStore('decisions').delete(id);
+                tx.oncomplete = loadDecisions;
+            }
+        }
+
+        async function deleteDay() {
+            if(confirm("Permanently delete this day?")) {
+                const tx = db.transaction('days', 'readwrite');
+                tx.objectStore('days').delete(dayId);
+                tx.oncomplete = () => history.back();
+            }
+        }
+
+        initDay();
+    </script>
+</body>
+</html>

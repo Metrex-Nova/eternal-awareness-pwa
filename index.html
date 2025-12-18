@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watchfulness</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+    <div class="container">
+        <div class="reminder-text">
+            HE WATCHES, HE IS CLEAR.
+            The only thing that has to be learned is watchfulness.
+            Watch – every act – thought – desire – gesture.
+            Let everything become an opportunity to watch.
+            Awareness is eternal, it knows no death. Only unawareness dies.
+        </div>
+
+        <div id="folder-list"></div>
+
+        <div style="margin-top: 40px; border-top: 1px solid var(--border); padding-top: 20px;">
+            <input type="text" id="new-folder-name" placeholder="New Folder Name (e.g. Jan 2026)"
+                style="width: 70%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;">
+            <button class="btn" onclick="handleCreateFolder()">Create</button>
+        </div>
+    </div>
+
+    <script src="storage.js"></script>
+    <script>
+        async function renderHome() {
+            await initDB();
+            const folders = await getAllFolders();
+            const list = document.getElementById('folder-list');
+
+            if (folders.length === 0) {
+                list.innerHTML = `<p style="text-align:center; color: var(--subtle);">No folders yet. Create one below.</p>`;
+                return;
+            }
+
+            list.innerHTML = folders.map(f => `
+                <div class="folder-card" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div onclick="window.location.href='folder.html?id=${encodeURIComponent(f.id)}'" style="flex-grow: 1;">
+                        <strong>${f.id}</strong>
+                    </div>
+                    <button class="btn-delete" onclick="handleDeleteFolder('${f.id}')" style="margin-top:0;">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        async function handleCreateFolder() {
+            const input = document.getElementById('new-folder-name');
+            const name = input.value;
+            if (name) {
+                await addCustomFolder(name);
+                input.value = '';
+                renderHome();
+            }
+        }
+
+        async function handleDeleteFolder(id) {
+            await deleteFolder(id);
+            renderHome();
+        }
+
+        renderHome();
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('Service Worker registered', reg))
+                    .catch(err => console.error('Service Worker failed', err));
+            });
+        }
+    </script>
+</body>
+
+</html>

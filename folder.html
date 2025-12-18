@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folder View</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <button class="btn" onclick="window.location.href='index.html'">← Home</button>
+        <h2 id="folder-title"></h2>
+        
+        <div id="day-list"></div>
+        
+        <div style="margin-top: 40px;">
+            <button class="btn" onclick="createNewDay()">+ New Day</button>
+            <button class="btn" style="margin-left: 10px;" onclick="exportFolderPDF()">Export Folder (PDF)</button>
+        </div>
+    </div>
+
+    <script src="storage.js"></script>
+    <script src="pdf-export.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const folderId = urlParams.get('id');
+
+        async function initFolderView() {
+            await initDB();
+            document.getElementById('folder-title').innerText = folderId;
+            renderDays();
+        }
+
+        async function renderDays() {
+            const days = await getDaysInFolder(folderId);
+            const list = document.getElementById('day-list');
+            
+            if (days.length === 0) {
+                list.innerHTML = `<p style="color: var(--subtle); margin-top: 20px;">No days logged in this period.</p>`;
+                return;
+            }
+
+            // Fetch summaries for each day (number of decisions)
+            const items = await Promise.all(days.map(async (day) => {
+                const decisions = await getDecisionsForDay(day.id);
+                return `
+                    <div class="day-card" onclick="window.location.href='day.html?id=${day.id}'">
+                        <strong>${day.date}</strong>
+                        <div style="font-size: 0.8rem; color: var(--subtle);">
+                            ${decisions.length} decision${decisions.length === 1 ? '' : 's'} logged
+                        </div>
+                    </div>
+                `;
+            }));
+            list.innerHTML = items.join('');
+        }
+
+        async function createNewDay() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US', { 
+                month: 'short', day: 'numeric', year: 'numeric' 
+            });
+            const dayId = Date.now().toString(); // Unique ID
+
+            const tx = db.transaction('days', 'readwrite');
+            const store = tx.objectStore('days');
+            
+            await new Promise((resolve) => {
+                const req = store.add({ id: dayId, folderId: folderId, date: dateStr });
+                req.onsuccess = () => resolve();
+            });
+
+            renderDays();
+        }
+
+        initFolderView();
+    </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+:root {
+    --bg: #fdfdfd;
+    --text: #2c2c2c;
+    --subtle: #999;
+    --border: #ececec;
+    --accent: #555;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    max-width: 600px;
+    width: 100%;
+}
+
+.reminder-text {
+    text-align: center;
+    font-style: italic;
+    color: var(--subtle);
+    margin: 40px 0;
+    font-size: 0.95rem;
+    white-space: pre-line;
+}
+
+.folder-card, .day-card {
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.folder-card:hover { background: #f9f9f9; }
+
+.decision-block {
+    background: #fff;
+    border-left: 3px solid var(--accent);
+    padding: 15px;
+    margin: 20px 0;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+textarea {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+    font-size: 1rem;
+    padding: 5px 0;
+    resize: none;
+    outline: none;
+}
+
+label { font-size: 0.75rem; text-transform: uppercase; color: var(--subtle); display: block; }
+
+.btn {
+    background: none;
+    border: 1px solid var(--accent);
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-delete { color: #cc0000; border-color: #fcc; font-size: 0.7rem; margin-top: 10px; }
